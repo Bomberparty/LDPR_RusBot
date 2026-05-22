@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import date
 
-from src.domain.entities.user import User
+from src.domain.entities.user import User, Role
 
 
 class IUserService(ABC):
