@@ -79,7 +79,7 @@ class UserService(IUserService):
         for symbol in phone_number:
             if symbol.isdigit():
                 digits.append(symbol)
-        phone_number = " ".join(digits)
+        phone_number = "".join(digits)
         if len(phone_number) != 11:
             raise PhoneBadFormatError
         if not phone_number.startswith("8"):
