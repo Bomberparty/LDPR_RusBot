@@ -1,7 +1,7 @@
-from .user import User, Sources
-
+from .user import User, Sources, Role
 
 __all__ = [
     'User',
-    'Sources'
+    'Sources',
+    'Role'
 ]

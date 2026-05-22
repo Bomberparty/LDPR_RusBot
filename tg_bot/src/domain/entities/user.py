@@ -9,6 +9,12 @@ class Sources(enum.Enum):
     MAX = 'max'
 
 
+class Role(enum.Enum):
+    USER = 'user'
+    STAFF = 'staff'
+    ADMIN = 'admin'
+
+
 @dataclass
 class User:
     id: int
@@ -28,3 +34,4 @@ class User:
     home_address: str | None
     news_subscription: bool = field(default=False)
     created_at: datetime = field(default_factory=lambda: datetime.now())
+    role: Role = field(default=Role.USER)

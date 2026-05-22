@@ -12,7 +12,7 @@ class IUserService(ABC):
             patronymic: str | None, birth_date: date,
             phone_number: str, region: str, email: str,
             gender: str, city: str, wish_to_join: bool, home_address: str | None,
-            news_subscription: bool
+            news_subscription: bool, role: Role = Role.USER
     ) -> User:
         ...
 
