@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from contextlib import _AsyncGeneratorContextManager
 
-from .entities import User, Sources
+from .entities import User, Sources, Application
 
 
 class IUnitOfWork(ABC):
@@ -47,3 +47,15 @@ class IStringSorterRepository(ABC):
     @abstractmethod
     async def sort_by_similarity(self, target: str, string_list: list[str]) -> list[str]:
         ...
+        
+class IApplicationRepository(ABC):
+    @abstractmethod
+    async def create_application(self, app: Application) -> Application:
+        ...
+    @abstractmethod
+    async def get_user_applications(self, user_id: int, skip: int = 0, limit: int = 4) -> list[Application]:
+        ...
+    @abstractmethod
+    async def get_user_applications_count(self, user_id: int) -> int:
+        ...
+

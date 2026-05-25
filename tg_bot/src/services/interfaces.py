@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date
 
 from src.domain.entities.user import User, Role
+from src.domain.entities.application import Application
 
 
 class IUserService(ABC):
@@ -56,4 +57,19 @@ class IUserService(ABC):
 
     @abstractmethod
     async def get_region_by_prefix(self, region_prefix: str) -> str:
+        ...
+
+class IApplicationService(ABC):
+    @abstractmethod
+    async def create_application(
+        self, user_id: int, sender_fio: str | None, deputy_fio: str, text: str
+    ) -> Application:
+        ...
+
+    @abstractmethod
+    async def get_user_applications(self, user_id: int, page: int = 0) -> tuple[list[Application], int]:
+        ...
+
+    @abstractmethod
+    async def get_applications_count(self, user_id: int) -> int:
         ...

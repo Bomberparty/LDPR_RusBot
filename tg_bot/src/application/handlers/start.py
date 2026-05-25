@@ -11,6 +11,8 @@ from src.application.states import RegistrationStates
 from src.application.keyboards.miniapp_keyboard import get_miniapp_keyboard
 from src.services.interfaces import IUserService
 
+from src.services.interfaces import IApplicationService
+
 router = Router(name=__name__)
 start_command_router = Router(name=__name__)
 logger = logging.getLogger(__name__)
@@ -19,7 +21,9 @@ logger = logging.getLogger(__name__)
 @router.message()
 @start_command_router.message(filters.CommandStart())
 @start_command_router.message(F.text == 'Отмена')
-async def start(message: types.Message, user_service: IUserService,
+async def start(message: types.Message, 
+                user_service: IUserService,
+                app_service: IApplicationService,
                 state: FSMContext):
     if message.chat.id <= 0:
         return
@@ -32,7 +36,8 @@ async def start(message: types.Message, user_service: IUserService,
             'Используйте кнопку ниже, чтобы открыть наш сайт',
             reply_markup=get_miniapp_keyboard()
         )
-        await message.answer("Меню", reply_markup=get_menu_keyboard())
+        has_apps = await app_service.get_applications_count(message.from_user.id) > 0
+        await message.answer("Меню", reply_markup=get_menu_keyboard(has_applications=has_apps))
         return
 
     logging.debug(f"User {message.from_user.id} Start conversation")

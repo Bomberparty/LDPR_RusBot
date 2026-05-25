@@ -1,7 +1,12 @@
 from aiogram.utils.keyboard import ReplyKeyboardMarkup, ReplyKeyboardBuilder
 
 
-def get_menu_keyboard() -> ReplyKeyboardMarkup:
+def get_menu_keyboard(has_applications: bool = False) -> ReplyKeyboardMarkup:
     keyword = ReplyKeyboardBuilder()
     keyword.button(text="Загрузить видео")
-    return keyword.as_markup(one_time_keyboard=True)
+    
+    if has_applications:
+        keyword.button(text="Мои обращения")
+        
+    keyword.button(text="Отправить обращение")
+    return keyword.as_markup(resize_keyboard=True)

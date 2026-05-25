@@ -28,3 +28,6 @@ class FioFormatError(Exception):
 
 class NotFoundRegionError(Exception):
     ...
+    
+class ApplicationNotFoundError(Exception):
+    ...

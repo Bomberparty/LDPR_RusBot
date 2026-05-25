@@ -28,3 +28,9 @@ class UploadVideoStates(StatesGroup):
     location = State()
     video = State()
     uploading = State()
+
+
+class ApplicationStates(StatesGroup):
+    sender_fio = State()
+    text = State()
+    deputy_fio = State()
