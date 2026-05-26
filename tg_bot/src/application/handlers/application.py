@@ -23,6 +23,7 @@ FIELD_MAP = {
     "ФИО депутата": "deputy_fio"
 }
 
+FIELD_DISPLAY_NAMES = {v: k for k, v in FIELD_MAP.items()}
 
 @router.message(F.text == "Сканировать обращение")
 async def start_scan_application(message: types.Message, state: FSMContext):
@@ -100,13 +101,13 @@ async def search_field(message: types.Message, state: FSMContext, string_sorter:
 @router.callback_query(FieldSelectCallback.filter(), ApplicationPhotoStates.selecting_field)
 async def select_field_callback(query: types.CallbackQuery, callback_data: FieldSelectCallback, state: FSMContext):
     field_key = callback_data.field_key
-    field_name = FIELD_MAP.get(field_key, field_key)
+    field_name = FIELD_DISPLAY_NAMES.get(field_key, field_key) 
 
     await state.update_data(editing_field_key=field_key, editing_field_name=field_name)
     await state.set_state(ApplicationPhotoStates.entering_value)
 
     await query.message.edit_reply_markup(reply_markup=None)
-    await query.message.reply(f"✏️ Введите новое значение для поля *{field_name}*:", parse_mode="Markdown")
+    await query.message.reply(f"✏️ Введите новое значение для поля *{field_name}*: ", parse_mode="Markdown")
 
 
 @router.message(ApplicationPhotoStates.entering_value)
