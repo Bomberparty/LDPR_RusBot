@@ -37,7 +37,7 @@ class Container(DeclarativeContainer):
         ApplicationRepository, uow=uow
     )
     app_service: providers.Factory[IApplicationService] = providers.Factory(
-        ApplicationService, app_repo=application_repository, user_repo=user_repository, uow=uow, source=Sources.TG
+        ApplicationService, app_repo=application_repository, uow=uow
     )
     gemini_extractor: providers.Factory[IGeminiExtractor] = providers.Factory(
         GeminiExtractor,

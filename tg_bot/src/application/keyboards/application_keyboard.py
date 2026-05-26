@@ -6,8 +6,9 @@ from src.application.callbacks import AppViewCallback, FieldSelectCallback
 def get_applications_list_keyboard(apps, page: int, total_count: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     for app in apps:
+        # Формируем кнопку на основе доступных полей модели Application
         kb.button(
-            text=f"📄 {app.sender_fio or 'Аноним'} -> {app.deputy_fio} | {app.created_at.strftime('%d.%m.%Y')}",
+            text=f"📄 Заявка №{app.id} | {app.created_at.strftime('%d.%m.%Y')}",
             callback_data="app_detail_dummy"
         )
     kb.adjust(1)

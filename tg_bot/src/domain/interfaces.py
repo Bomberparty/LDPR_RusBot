@@ -62,9 +62,4 @@ class IApplicationRepository(ABC):
 class IGeminiExtractor(ABC):
     @abstractmethod
     async def extract_application_data(self, image_bytes: bytes) -> dict[str, str]:
-        """
-        Извлекает structured data из изображения обращения.
-        Возвращает dict с ключами: sender_fio, application_text, deputy_fio.
-        Отсутствующие поля заменяются на '-'.
-        """
         ...

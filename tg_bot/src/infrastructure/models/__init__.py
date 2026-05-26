@@ -1,10 +1,7 @@
 from .user import UserORM
-
-from .user import UserORM
-from .application import ApplicationORM, ApplicationTextORM
+from .application import ApplicationORM
 
 __all__ = [
     "UserORM",
     "ApplicationORM",
-    "ApplicationTextORM",
 ]

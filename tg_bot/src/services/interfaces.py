@@ -59,17 +59,18 @@ class IUserService(ABC):
     async def get_region_by_prefix(self, region_prefix: str) -> str:
         ...
 
+from abc import ABC, abstractmethod
+from src.domain.entities.application import Application
+
 class IApplicationService(ABC):
     @abstractmethod
-    async def create_application(
-        self, user_id: int, sender_fio: str | None, deputy_fio: str, text: str
-    ) -> Application:
+    async def create_application(self, user_id: int, text: str) -> Application: 
         ...
 
     @abstractmethod
-    async def get_user_applications(self, user_id: int, page: int = 0) -> tuple[list[Application], int]:
+    async def get_user_applications(self, user_id: int, page: int = 0) -> tuple[list[Application], int]: 
         ...
 
     @abstractmethod
-    async def get_applications_count(self, user_id: int) -> int:
+    async def get_applications_count(self, user_id: int) -> int: 
         ...

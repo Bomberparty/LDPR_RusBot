@@ -27,6 +27,10 @@ async def start(message: types.Message,
                 state: FSMContext):
     if message.chat.id <= 0:
         return
+    
+    if message.text in ["Сканировать обращение", "Мои обращения", "Загрузить видео"]:
+        return
+
     if await user_service.is_user_exists(message.from_user.id):
         logging.debug(f"User {message.from_user.id} already exists")
         await message.reply(

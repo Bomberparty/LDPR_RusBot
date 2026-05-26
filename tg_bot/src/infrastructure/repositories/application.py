@@ -1,11 +1,8 @@
 from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
-
 from src.domain.entities.application import Application
 from src.domain.interfaces import IApplicationRepository
 from src.infrastructure.interfaces import IDatabaseUnitOfWork
-from src.infrastructure.models.application import ApplicationORM, ApplicationTextORM
-
+from src.infrastructure.models.application import ApplicationORM
 
 class ApplicationRepository(IApplicationRepository):
     def __init__(self, uow: IDatabaseUnitOfWork):
@@ -15,12 +12,8 @@ class ApplicationRepository(IApplicationRepository):
         session = self.__uow.get_session()
         app_orm = ApplicationORM(
             user_id=app.user_id,
-            sender_fio=app.sender_fio,
-            deputy_fio=app.deputy_fio
+            application_text=app.application_text
         )
-        text_orm = ApplicationTextORM(application_text=app.application_text)
-        
-        app_orm.text = text_orm
         session.add(app_orm)
         await session.commit()
         await session.refresh(app_orm)

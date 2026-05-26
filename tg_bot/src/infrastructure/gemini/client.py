@@ -18,12 +18,10 @@ class GeminiExtractor(IGeminiExtractor):
         )
         self.model = "gemini-2.5-flash"
         self.prompt = (
-            "Extract the following fields from the provided document image as a strict JSON object:\n"
-            "- sender_fio: Full name of the sender\n"
+            "Extract the application text from the provided document image as a strict JSON object:\n"
             "- application_text: The main text/content of the application\n"
-            "- deputy_fio: Full name of the deputy\n"
-            "Return ONLY a valid JSON object with exactly these three keys. "
-            "If a field is missing or unclear, set its value to null."
+            "Return ONLY a valid JSON object with exactly this one key.  "
+            "If the field is missing or unclear, set its value to null."
         )
 
     async def extract_application_data(self, image_bytes: bytes) -> dict[str, str]:
@@ -47,9 +45,7 @@ class GeminiExtractor(IGeminiExtractor):
             data = json.loads(raw_json)
             
             return {
-                "sender_fio": data.get("sender_fio") or "-",
                 "application_text": data.get("application_text") or "-",
-                "deputy_fio": data.get("deputy_fio") or "-",
             }
         except json.JSONDecodeError as e:
             logger.error(f"Gemini returned invalid JSON: {e}")
