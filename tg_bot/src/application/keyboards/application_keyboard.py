@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
-from src.application.callbacks import AppViewCallback, EditFieldCallback
+from src.application.callbacks import AppViewCallback, FieldSelectCallback
 
 
 def get_applications_list_keyboard(apps, page: int, total_count: int) -> InlineKeyboardMarkup:
@@ -8,7 +8,7 @@ def get_applications_list_keyboard(apps, page: int, total_count: int) -> InlineK
     for app in apps:
         kb.button(
             text=f"📄 {app.sender_fio or 'Аноним'} -> {app.deputy_fio} | {app.created_at.strftime('%d.%m.%Y')}",
-            callback_data="app_detail_dummy" # Можно расширить позже
+            callback_data="app_detail_dummy"
         )
     kb.adjust(1)
     
@@ -24,16 +24,17 @@ def get_applications_list_keyboard(apps, page: int, total_count: int) -> InlineK
     return kb.as_markup()
 
 
-def get_edit_fields_keyboard() -> InlineKeyboardMarkup:
-    kb = InlineKeyboardBuilder()
-    kb.button(text="✏️ ФИО отправителя", callback_data=EditFieldCallback(field="sender_fio").pack())
-    kb.button(text="✏️ Текст обращения", callback_data=EditFieldCallback(field="application_text").pack())
-    kb.button(text="✏️ ФИО депутата", callback_data=EditFieldCallback(field="deputy_fio").pack())
-    kb.adjust(1)
-    return kb.as_markup()
-
-
-def get_save_photo_keyboard() -> ReplyKeyboardMarkup:
+def get_edit_menu_keyboard() -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
     kb.button(text="✅ Сохранить обращение")
-    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)
+    kb.button(text="✏️ Отредактировать")
+    kb.adjust(2)
+    return kb.as_markup(resize_keyboard=True)
+
+
+def get_field_suggestions_keyboard(field_options: dict[str, str]) -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    for key, name in field_options.items():
+        kb.button(text=name, callback_data=FieldSelectCallback(field_key=key).pack())
+    kb.adjust(1)
+    return kb.as_markup()

@@ -32,4 +32,7 @@ class UploadVideoStates(StatesGroup):
 
 class ApplicationPhotoStates(StatesGroup):
     waiting_photo = State()
-    editing = State() 
+    editing = State()
+    typing_field = State()
+    selecting_field = State()
+    entering_value = State()
