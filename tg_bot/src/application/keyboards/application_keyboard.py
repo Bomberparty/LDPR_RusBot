@@ -1,6 +1,6 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from src.application.callbacks import AppViewCallback, SendApplicationCallback
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
+from src.application.callbacks import AppViewCallback, SendApplicationCallback, EditFieldCallback
 
 def get_application_main_keyboard() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
@@ -28,3 +28,18 @@ def get_applications_list_keyboard(apps, page: int, total_count: int) -> InlineK
         kb.attach(nav_kb)
         
     return kb.as_markup()
+
+
+def get_edit_fields_keyboard() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✏️ ФИО отправителя", callback_data=EditFieldCallback(field="sender_fio").pack())
+    kb.button(text="✏️ Текст обращения", callback_data=EditFieldCallback(field="application_text").pack())
+    kb.button(text="✏️ ФИО депутата", callback_data=EditFieldCallback(field="deputy_fio").pack())
+    kb.adjust(1)
+    return kb.as_markup()
+
+
+def get_save_photo_keyboard() -> ReplyKeyboardMarkup:
+    kb = ReplyKeyboardBuilder()
+    kb.button(text="✅ Сохранить обращение")
+    return kb.as_markup(resize_keyboard=True, one_time_keyboard=True)

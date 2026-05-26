@@ -15,3 +15,7 @@ class SendApplicationCallback(CallbackData, prefix="app_send"):
 
 class AppViewCallback(CallbackData, prefix="app_view"):
     page: int
+
+
+class EditFieldCallback(CallbackData, prefix="edit_field"):
+    field: str  # "sender_fio", "application_text", "deputy_fio"

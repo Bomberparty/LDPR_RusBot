@@ -9,6 +9,8 @@ from src.infrastructure.interfaces import IDatabase
 from src.infrastructure.repositories import UserRepository, LevenshteinRepository, FuzzywuzzyRepository
 from src.services import UserService
 from src.services.interfaces import IUserService
+from src.domain.interfaces import IGeminiExtractor
+from src.infrastructure.gemini import GeminiExtractor
 from src.domain.entities import Sources
 from src.core import config
 
@@ -36,4 +38,9 @@ class Container(DeclarativeContainer):
     )
     app_service: providers.Factory[IApplicationService] = providers.Factory(
         ApplicationService, app_repo=application_repository, user_repo=user_repository, uow=uow, source=Sources.TG
+    )
+    gemini_extractor: providers.Factory[IGeminiExtractor] = providers.Factory(
+        GeminiExtractor,
+        api_key=config.GEMINI_API_KEY,
+        proxy_url_for_sdk=config.PROXY_URL_FOR_SDK
     )

@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 TG_API_TOKEN = os.getenv("TG_API_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+PROXY_URL_FOR_SDK = os.getenv("PROXY_URL_FOR_SDK")
 proxy = os.getenv("PROXY", None)
 
 log_chat = os.getenv("LOG_CHAT")

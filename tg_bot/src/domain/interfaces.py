@@ -59,3 +59,12 @@ class IApplicationRepository(ABC):
     async def get_user_applications_count(self, user_id: int) -> int:
         ...
 
+class IGeminiExtractor(ABC):
+    @abstractmethod
+    async def extract_application_data(self, image_bytes: bytes) -> dict[str, str]:
+        """
+        Извлекает structured data из изображения обращения.
+        Возвращает dict с ключами: sender_fio, application_text, deputy_fio.
+        Отсутствующие поля заменяются на '-'.
+        """
+        ...

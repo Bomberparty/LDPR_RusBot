@@ -34,3 +34,8 @@ class ApplicationStates(StatesGroup):
     sender_fio = State()
     text = State()
     deputy_fio = State()
+
+
+class ApplicationPhotoStates(StatesGroup):
+    waiting_photo = State()
+    editing = State() 
