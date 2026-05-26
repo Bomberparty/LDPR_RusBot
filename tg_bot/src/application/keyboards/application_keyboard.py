@@ -1,13 +1,7 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
-from src.application.callbacks import AppViewCallback, SendApplicationCallback, EditFieldCallback
+from src.application.callbacks import AppViewCallback, EditFieldCallback
 
-def get_application_main_keyboard() -> InlineKeyboardMarkup:
-    kb = InlineKeyboardBuilder()
-    kb.button(text="📝 Отправить текстовое обращение", callback_data=SendApplicationCallback(action="text").pack())
-    kb.button(text="📷 Отсканировать фото обращения", callback_data=SendApplicationCallback(action="photo").pack())
-    kb.adjust(1)
-    return kb.as_markup()
 
 def get_applications_list_keyboard(apps, page: int, total_count: int) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
