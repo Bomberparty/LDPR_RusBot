@@ -36,3 +36,7 @@ class ApplicationPhotoStates(StatesGroup):
     typing_field = State()
     selecting_field = State()
     entering_value = State()
+
+class AdminStates(StatesGroup):
+    menu = State()
+    promote_to_staff = State()

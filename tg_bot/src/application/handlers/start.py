@@ -24,11 +24,12 @@ logger = logging.getLogger(__name__)
 async def start(message: types.Message, 
                 user_service: IUserService,
                 app_service: IApplicationService,
+                admin_ids: list[int],
                 state: FSMContext):
     if message.chat.id <= 0:
         return
     
-    if message.text in ["Сканировать обращение", "Мои обращения", "Загрузить видео"]:
+    if message.text in ["Сканировать обращение", "Мои обращения", "Загрузить видео", "Админ-панель"]:
         return
 
     if await user_service.is_user_exists(message.from_user.id):
@@ -41,7 +42,8 @@ async def start(message: types.Message,
             reply_markup=get_miniapp_keyboard()
         )
         has_apps = await app_service.get_applications_count(message.from_user.id) > 0
-        await message.answer("Меню", reply_markup=get_menu_keyboard(has_applications=has_apps))
+        is_admin = message.from_user.id in admin_ids
+        await message.answer("Меню", reply_markup=get_menu_keyboard(has_applications=has_apps, is_admin=is_admin))
         return
 
     logging.debug(f"User {message.from_user.id} Start conversation")

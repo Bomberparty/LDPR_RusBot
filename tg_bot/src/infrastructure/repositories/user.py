@@ -3,7 +3,7 @@ import logging
 from sqlalchemy import select
 
 from src.domain import exceptions
-from src.domain.entities import User, Sources
+from src.domain.entities import User, Sources, Role
 from src.domain.interfaces import IUserRepository
 from ..interfaces import IDatabaseUnitOfWork
 from ..models.user import UserORM
@@ -94,4 +94,21 @@ class UserRepository(IUserRepository):
         await session.refresh(user_orm)
 
         logger.debug(f"Updated news subscription for user id={user_id}")
+        return await user_orm.to_domain()
+
+    async def update_user_role(self, user_id: int, source: Sources, role: Role) -> User:
+        logger.debug(f"Updating role for user id={user_id} to {role.value}")
+        session = self.__uow.get_session()
+        stmt = select(UserORM).where(UserORM.id == user_id, UserORM.source == source)
+        user_orm = await session.scalar(stmt)
+
+        if user_orm is None:
+            logger.debug(f"Not found user with id={user_id}")
+            raise exceptions.UserNotFoundError()
+
+        user_orm.role = role
+        await session.commit()
+        await session.refresh(user_orm)
+
+        logger.debug(f"Updated role for user id={user_id}")
         return await user_orm.to_domain()

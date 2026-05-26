@@ -58,6 +58,10 @@ class IUserService(ABC):
     @abstractmethod
     async def get_region_by_prefix(self, region_prefix: str) -> str:
         ...
+    
+    @abstractmethod
+    async def update_user_role(self, user_id: int, role: Role) -> User:
+        ...
 
 from abc import ABC, abstractmethod
 from src.domain.entities.application import Application

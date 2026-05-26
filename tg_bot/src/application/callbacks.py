@@ -15,3 +15,7 @@ class AppViewCallback(CallbackData, prefix="app_view"):
 
 class FieldSelectCallback(CallbackData, prefix="field_sel"):
     field_key: str  # sender_fio, application_text, deputy_fio
+
+
+class AdminPanelCallback(CallbackData, prefix="admin_panel"):
+    action: str

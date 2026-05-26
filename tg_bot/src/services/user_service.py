@@ -152,3 +152,7 @@ class UserService(IUserService):
             if region.startswith(region_prefix):
                 return region
         raise NotFoundRegionError(f"No such region starting with {region_prefix}")
+    
+    async def update_user_role(self, user_id: int, role: Role) -> User:
+        async with self.__uow.atomic():
+            return await self.__user_repo.update_user_role(user_id, self.__source, role)
