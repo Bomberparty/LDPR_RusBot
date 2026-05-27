@@ -28,24 +28,28 @@ class StaffApplicationService(IStaffApplicationService):
         elif not isinstance(obtained_at, datetime):
             obtained_at = datetime.now()
 
+        # ✅ Гарантия: ни одно строковое поле не будет None или ""
+        def _safe(val: str | None) -> str:
+            return val if val else "-"
+
         app = StaffApplication(
             id=uuid.uuid4().hex,
             staff_id=str(staff_id),
-            surname=data.get("surname", "-"),
-            name=data.get("name", "-"),
-            patronymic=data.get("patronymic"),
-            region=data.get("region", "-"),
-            city=data.get("city", "-"),
-            home_address=data.get("home_address"),
+            surname=_safe(data.get("surname")),
+            name=_safe(data.get("name")),
+            patronymic=_safe(data.get("patronymic")),
+            region=_safe(data.get("region")),
+            city=_safe(data.get("city")),
+            home_address=_safe(data.get("home_address")),
             birth_date=birth_date,
-            phone_number=data.get("phone_number", "-"),
-            email=data.get("email", "-"),
+            phone_number=_safe(data.get("phone_number")),
+            email=_safe(data.get("email")),
             source="tg",
             obtained_data_at=obtained_at,
-            application_text=data.get("application_text", "-"),
+            application_text=_safe(data.get("application_text")),
             personal_data_agreement=pd_agreement,
-            application_file_id=data.get("file_id", "-"),
-            personal_data_file_id=pd_file_id or "-"
+            application_file_id=_safe(data.get("file_id")),
+            personal_data_file_id=_safe(pd_file_id)
         )
         async with self.__uow.atomic():
             return await self.__repo.create_staff_application(app)

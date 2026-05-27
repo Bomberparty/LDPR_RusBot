@@ -11,6 +11,9 @@ class StaffApplicationRepository(IStaffApplicationRepository):
         session = self.__uow.get_session()
         app_orm = await StaffApplicationORM.from_domain(app)
         session.add(app_orm)
+        
+        # ✅ ДОБАВИТЬ ЭТИ СТРОКИ:
         await session.commit()
         await session.refresh(app_orm)
+        
         return await app_orm.to_domain()

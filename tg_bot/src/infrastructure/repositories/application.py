@@ -12,7 +12,7 @@ class ApplicationRepository(IApplicationRepository):
         session = self.__uow.get_session()
         app_orm = ApplicationORM(
             user_id=app.user_id,
-            application_text=app.application_text
+            application_text=app.application_text or "-"
         )
         session.add(app_orm)
         await session.commit()

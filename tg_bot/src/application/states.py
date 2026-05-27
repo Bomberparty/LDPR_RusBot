@@ -47,7 +47,6 @@ class StaffApplicationStates(StatesGroup):
     entering_value_other = State()
     pd_upload = State()
     waiting_pd_file = State()
-    confirm_save = State()
 
 
 class AdminStates(StatesGroup):

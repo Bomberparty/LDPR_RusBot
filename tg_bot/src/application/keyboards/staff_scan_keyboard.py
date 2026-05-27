@@ -13,6 +13,7 @@ def get_scan_type_keyboard() -> InlineKeyboardMarkup:
 
 def get_staff_edit_menu_keyboard() -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
+    kb.button(text="✅ Сохранить обращение")
     kb.button(text="✅ Сохранить и перейти к ПДн")
     kb.button(text="✏️ Отредактировать данные")
     kb.adjust(2)
@@ -33,11 +34,3 @@ def get_pd_upload_keyboard() -> ReplyKeyboardMarkup:
     kb.button(text="⛔ Не загружать ПДн")
     kb.adjust(1)
     return kb.as_markup(resize_keyboard=True)
-
-
-def get_finalize_staff_keyboard() -> InlineKeyboardMarkup:
-    """Клавиатура для финального подтверждения сохранения"""
-    kb = InlineKeyboardBuilder()
-    kb.button(text="✅ Сохранить и отправить", callback_data="staff_finalize")
-    kb.adjust(1)
-    return kb.as_markup()

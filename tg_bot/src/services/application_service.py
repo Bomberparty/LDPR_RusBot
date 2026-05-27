@@ -9,6 +9,8 @@ class ApplicationService(IApplicationService):
         self.__uow = uow
 
     async def create_application(self, user_id: int, text: str) -> Application:
+        # ✅ Финальная проверка текста перед сохранением
+        text = text or "-"
         app = Application(id=0, user_id=user_id, application_text=text)
         async with self.__uow.atomic():
             return await self.__app_repo.create_application(app)
