@@ -7,10 +7,12 @@ from aiogram.types import ReplyKeyboardRemove
 from src.application.states import ApplicationPhotoStates, StaffApplicationStates
 from src.application.callbacks import StaffScanTypeCallback, StaffFieldSelectCallback, StaffPdCallback
 from src.application.keyboards.staff_scan_keyboard import (
-    get_scan_type_keyboard, get_staff_edit_menu_keyboard,
-    get_staff_field_suggestions_keyboard, get_pd_upload_keyboard, get_menu_keyboard
+    get_scan_type_keyboard, 
+    get_staff_edit_menu_keyboard,
+    get_staff_field_suggestions_keyboard, 
+    get_pd_upload_keyboard
 )
-from src.application.keyboards.menu_keyboard import get_menu_keyboard as main_menu_kb
+from src.application.keyboards.menu_keyboard import get_menu_keyboard
 from src.services.interfaces import IStaffApplicationService, IUserService
 from src.domain.interfaces import IGeminiExtractor, IStringSorterRepository, IUserRepository
 from src.domain.entities import Sources

@@ -15,6 +15,7 @@ from .get_home_address import router as home_address_router
 from .get_news_subscription import router as news_subscription_router
 from .start import router as start_router, start_command_router
 from .application import router as app_router
+from .staff_scan_appication import router as scan_router
 
 router = Router(name=__name__)
 
@@ -33,5 +34,6 @@ router.include_router(city_router)
 router.include_router(wish_to_join_router)
 router.include_router(home_address_router)
 router.include_router(news_subscription_router)
+router.include_router(scan_router)
 router.include_router(start_router)
 
