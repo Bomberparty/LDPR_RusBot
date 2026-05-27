@@ -36,4 +36,3 @@ router.include_router(home_address_router)
 router.include_router(news_subscription_router)
 router.include_router(scan_router)
 router.include_router(start_router)
-

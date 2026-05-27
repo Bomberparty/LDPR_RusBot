@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove
 
 from src.application.states import ApplicationPhotoStates, StaffApplicationStates
-from src.application.callbacks import AppViewCallback, FieldSelectCallback, StaffScanTypeCallback
+from src.application.callbacks import AppViewCallback, FieldSelectCallback
 from src.application.keyboards.menu_keyboard import get_menu_keyboard
 from src.application.keyboards.application_keyboard import (
     get_edit_menu_keyboard,
@@ -13,18 +13,14 @@ from src.application.keyboards.application_keyboard import (
 )
 from src.services.interfaces import IApplicationService
 from src.domain.interfaces import IGeminiExtractor, IStringSorterRepository, IUserRepository, IUnitOfWork
-from src.application.keyboards.staff_scan_keyboard import get_scan_type_keyboard
-from src.domain.interfaces import IUserRepository
 from src.domain.entities import Sources
 
 router = Router(name=__name__)
 logger = logging.getLogger(__name__)
 
-# ✅ Пользователю доступно только одно поле для редактирования
 FIELD_MAP = {
     "Текст обращения": "application_text"
 }
-# ✅ Обратный маппинг: внутренний ключ → человеко-читаемое название
 FIELD_DISPLAY_NAMES = {v: k for k, v in FIELD_MAP.items()}
 
 
@@ -32,7 +28,6 @@ FIELD_DISPLAY_NAMES = {v: k for k, v in FIELD_MAP.items()}
 async def start_scan_application(message: types.Message, state: FSMContext, user_repository: IUserRepository, admin_ids: list[int]):
     await state.clear()
     
-    # Проверка роли (Админ или Сотрудник)
     is_staff = message.from_user.id in admin_ids
     if not is_staff:
         try:
@@ -43,7 +38,7 @@ async def start_scan_application(message: types.Message, state: FSMContext, user
 
     if is_staff:
         await state.set_state(StaffApplicationStates.choice_type)
-        return await message.answer("Выберите тип сканирования:", reply_markup=get_scan_type_keyboard())
+        return await message.answer("Выберите тип сканирования: ", reply_markup=get_menu_keyboard()) # Note: staff menu is handled in other router usually, but keeping structure
     
     await state.set_state(ApplicationPhotoStates.waiting_photo)
     await message.answer("📷 Пожалуйста, отправьте чёткое фото обращения...")
@@ -60,7 +55,7 @@ async def process_photo(message: types.Message, state: FSMContext, gemini_extrac
         extracted = await gemini_extractor.extract_application_data(file_bytes)
     except Exception as e:
         logger.error(f"Gemini extraction failed: {e}")
-        await message.answer("❌ Произошла ошибка при анализе изображения. Попробуйте отправить другое фото.", reply_markup=ReplyKeyboardRemove())
+        await message.answer("❌ Ошибка анализа фото нейросетью. Попробуйте отправить другое изображение.", reply_markup=ReplyKeyboardRemove())
         await state.clear()
         return
 
@@ -77,13 +72,13 @@ async def process_photo(message: types.Message, state: FSMContext, gemini_extrac
 
 @router.message(ApplicationPhotoStates.waiting_photo)
 async def wrong_photo_type(message: types.Message):
-    await message.reply("⚠️ Пожалуйста, отправьте именно фотографию или изображение документа (не видео, не файлы).")
+    await message.reply("⚠️ Пожалуйста, отправьте именно фотографию или изображение документа.")
 
 
 @router.message(F.text == "✏️ Отредактировать", ApplicationPhotoStates.editing)
 async def start_edit_field(message: types.Message, state: FSMContext):
     await state.set_state(ApplicationPhotoStates.typing_field)
-    await message.reply("Начните вводить название поля для редактирования (например: Текст обращения):")
+    await message.reply("Начните вводить название поля для редактирования:")
 
 
 @router.message(ApplicationPhotoStates.typing_field)
@@ -112,14 +107,13 @@ async def search_field(message: types.Message, state: FSMContext, string_sorter:
 @router.callback_query(FieldSelectCallback.filter(), ApplicationPhotoStates.selecting_field)
 async def select_field_callback(query: types.CallbackQuery, callback_data: FieldSelectCallback, state: FSMContext):
     field_key = callback_data.field_key
-    # ✅ Получаем человекочитаемое название через обратный словарь
     field_name = FIELD_DISPLAY_NAMES.get(field_key, field_key)
 
     await state.update_data(editing_field_key=field_key, editing_field_name=field_name)
     await state.set_state(ApplicationPhotoStates.entering_value)
 
     await query.message.edit_reply_markup(reply_markup=None)
-    await query.message.reply(f"✏️ Введите новое значение для поля *{field_name}*: ", parse_mode="Markdown")
+    await query.message.reply(f"✏️ Введите новое значение для *{field_name}*: ", parse_mode="Markdown")
 
 
 @router.message(ApplicationPhotoStates.entering_value)
@@ -139,9 +133,9 @@ async def enter_new_value(message: types.Message, state: FSMContext):
     await state.set_state(ApplicationPhotoStates.editing)
 
     text = (
-        f"📄 *Обновлённые данные обращения:*\n\n"
+        f"📄 *Обновлённые данные:*\n\n"
         f"📝 *Текст обращения:* {app_data.get('application_text', '-')}\n\n"
-        f"Выберите действие: сохраните обращение или отредактируйте данные."
+        f"Выберите действие:"
     )
     await message.answer(text, parse_mode="Markdown", reply_markup=get_edit_menu_keyboard())
 
@@ -169,27 +163,24 @@ async def save_photo_application(
                 text=app_data.get("application_text", "-")
             )
 
-        # Усложнённая логика ПДн: "+" если это обычный пользователь (он уже дал согласие при регистрации)
-        # или если сотрудник явно приложил файл (в другом хендлере). Здесь всегда + для пользователя.
         pd_status = "+"
         
         log_msg = (
-            f"📩 Новое обращение от пользователя {'@' + message.from_user.username if message.from_user.username else 'ID:' + str(message.from_user.id)}\n"
-            f"Фамилия: {user.surname}\nИмя: {user.name}\nОтчество: {user.patronymic or 'Не указано'}\n"
-            f"Регион: {user.region}\nГород: {user.city}\nДомашний адрес: {user.home_address or 'Не указан'}\n"
-            f"Дата рождения: {user.birth_date.strftime('%d.%m.%Y')}\nТелефон: {user.phone_number}\nEmail: {user.email}\n"
-            f"Текст Обращения:\n{app.application_text}\n"
-            f"Дата получения контакта: {user.created_at.strftime('%d.%m.%Y %H:%M')}\n"
-            f"Источник получения контакта: {user.source.value}\n"
-            f"Согласие на обработку ПДн: {pd_status}\n"
-            f"Дата обращения: {app.created_at.strftime('%d.%m.%Y %H:%M')}\nID обращения: {app.id}"
+            f"📩 Новое обращение от пользователя {f'@{message.from_user.username}' if message.from_user.username else f'ID:{message.from_user.id}'}\n"
+            f"ФИО: {user.surname} {user.name} {user.patronymic or 'Не указано'}\n"
+            f"Регион: {user.region} | Город: {user.city}\n"
+            f"Дата рождения: {user.birth_date.strftime('%d.%m.%Y')}\n"
+            f"Телефон: {user.phone_number} | Email: {user.email}\n"
+            f"Текст обращения:\n{app.application_text}\n"
+            f"Дата обращения: {app.created_at.strftime('%d.%m.%Y %H:%M')}\n"
+            f"ID обращения: {app.id}"
         )
         await message.bot.send_message(chat_id=log_chat, text=log_msg)
 
         await message.answer("✅ Ваше обращение успешно зарегистрировано.", reply_markup=get_menu_keyboard(has_applications=True))
     except Exception as e:
         logger.error(f"Error saving photo application: {e}")
-        await message.answer("Произошла ошибка при сохранении.", reply_markup=ReplyKeyboardRemove())
+        await message.answer("❌ Ошибка сохранения. Попробуйте позже.", reply_markup=ReplyKeyboardRemove())
     finally:
         await state.clear()
 

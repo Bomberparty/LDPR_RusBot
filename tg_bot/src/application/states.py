@@ -24,12 +24,6 @@ class PostsStates(StatesGroup):
     confirm = State()
 
 
-class UploadVideoStates(StatesGroup):
-    location = State()
-    video = State()
-    uploading = State()
-
-
 class ApplicationPhotoStates(StatesGroup):
     waiting_photo = State()
     editing = State()

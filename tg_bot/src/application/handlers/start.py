@@ -4,14 +4,10 @@ from aiogram import Router, types, filters, F
 from aiogram.fsm.context import FSMContext
 
 from src.application.keyboards.menu_keyboard import get_menu_keyboard
-from src.application.keyboards.personal_data_keyboard import \
-    get_personal_data_keyboard
+from src.application.keyboards.personal_data_keyboard import get_personal_data_keyboard
 from src.application.states import RegistrationStates
-
 from src.application.keyboards.miniapp_keyboard import get_miniapp_keyboard
-from src.services.interfaces import IUserService
-
-from src.services.interfaces import IApplicationService
+from src.services.interfaces import IUserService, IApplicationService
 
 router = Router(name=__name__)
 start_command_router = Router(name=__name__)
@@ -29,7 +25,7 @@ async def start(message: types.Message,
     if message.chat.id <= 0:
         return
     
-    if message.text in ["Сканировать обращение", "Мои обращения", "Загрузить видео", "Админ-панель"]:
+    if message.text in ["Сканировать обращение", "Мои обращения", "Админ-панель"]:
         return
 
     if await user_service.is_user_exists(message.from_user.id):
