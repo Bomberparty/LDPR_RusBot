@@ -3,8 +3,8 @@ from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove
 
-from src.application.states import ApplicationPhotoStates
-from src.application.callbacks import AppViewCallback, FieldSelectCallback
+from src.application.states import ApplicationPhotoStates, StaffApplicationStates
+from src.application.callbacks import AppViewCallback, FieldSelectCallback, StaffScanTypeCallback
 from src.application.keyboards.menu_keyboard import get_menu_keyboard
 from src.application.keyboards.application_keyboard import (
     get_edit_menu_keyboard,
@@ -13,6 +13,8 @@ from src.application.keyboards.application_keyboard import (
 )
 from src.services.interfaces import IApplicationService
 from src.domain.interfaces import IGeminiExtractor, IStringSorterRepository, IUserRepository, IUnitOfWork
+from src.application.keyboards.staff_scan_keyboard import get_scan_type_keyboard
+from src.domain.interfaces import IUserRepository
 from src.domain.entities import Sources
 
 router = Router(name=__name__)
@@ -27,8 +29,22 @@ FIELD_DISPLAY_NAMES = {v: k for k, v in FIELD_MAP.items()}
 
 
 @router.message(F.text == "Сканировать обращение")
-async def start_scan_application(message: types.Message, state: FSMContext):
+async def start_scan_application(message: types.Message, state: FSMContext, user_repository: IUserRepository, admin_ids: list[int]):
     await state.clear()
+    
+    # Проверка роли (Админ или Сотрудник)
+    is_staff = message.from_user.id in admin_ids
+    if not is_staff:
+        try:
+            user = await user_repository.get_user(message.from_user.id, Sources.TG)
+            is_staff = user.role.value in ["staff", "admin"]
+        except Exception:
+            is_staff = False
+
+    if is_staff:
+        await state.set_state(StaffApplicationStates.choice_type)
+        return await message.answer("Выберите тип сканирования:", reply_markup=get_scan_type_keyboard())
+    
     await state.set_state(ApplicationPhotoStates.waiting_photo)
     await message.answer("📷 Пожалуйста, отправьте чёткое фото обращения...")
 
@@ -143,44 +159,37 @@ async def save_photo_application(
     app_data = data.get("app_photo_data")
 
     if not app_data:
-        return await message.reply("❌ Ошибка: данные обращения не найдены. Начните заново.", reply_markup=ReplyKeyboardRemove())
+        return await message.reply("❌ Ошибка: данные обращения не найдены.", reply_markup=ReplyKeyboardRemove())
 
     try:
         async with uow.atomic():
-            # Забираем данные пользователя из профиля для формирования лога
             user = await user_repository.get_user(message.from_user.id, Sources.TG)
-
-            # Создаём обращение (передаём только user_id и текст, согласно текущей модели)
             app = await app_service.create_application(
                 user_id=message.from_user.id,
                 text=app_data.get("application_text", "-")
             )
 
-        # ✅ Формируем лог согласно ТЗ
+        # Усложнённая логика ПДн: "+" если это обычный пользователь (он уже дал согласие при регистрации)
+        # или если сотрудник явно приложил файл (в другом хендлере). Здесь всегда + для пользователя.
+        pd_status = "+"
+        
         log_msg = (
-            f"📩 Новое обращение (ФОТО) от пользователя {'@' + message.from_user.username if message.from_user.username else 'ID:' + str(message.from_user.id)}\n"
-            f"Фамилия: {user.surname}\n"
-            f"Имя: {user.name}\n"
-            f"Отчество: {user.patronymic or 'Не указано'}\n"
-            f"Регион: {user.region}\n"
-            f"Город: {user.city}\n"
-            f"Домашний адрес: {user.home_address or 'Не указан'}\n"
-            f"Дата рождения: {user.birth_date.strftime('%d.%m.%Y')}\n"
-            f"Телефон: {user.phone_number}\n"
-            f"Email: {user.email}\n"
+            f"📩 Новое обращение от пользователя {'@' + message.from_user.username if message.from_user.username else 'ID:' + str(message.from_user.id)}\n"
+            f"Фамилия: {user.surname}\nИмя: {user.name}\nОтчество: {user.patronymic or 'Не указано'}\n"
+            f"Регион: {user.region}\nГород: {user.city}\nДомашний адрес: {user.home_address or 'Не указан'}\n"
+            f"Дата рождения: {user.birth_date.strftime('%d.%m.%Y')}\nТелефон: {user.phone_number}\nEmail: {user.email}\n"
             f"Текст Обращения:\n{app.application_text}\n"
             f"Дата получения контакта: {user.created_at.strftime('%d.%m.%Y %H:%M')}\n"
             f"Источник получения контакта: {user.source.value}\n"
-            f"Согласие на обработку ПДн: +\n"
-            f"Дата обращения: {app.created_at.strftime('%d.%m.%Y %H:%M')}\n"
-            f"ID обращения: {app.id}"
+            f"Согласие на обработку ПДн: {pd_status}\n"
+            f"Дата обращения: {app.created_at.strftime('%d.%m.%Y %H:%M')}\nID обращения: {app.id}"
         )
         await message.bot.send_message(chat_id=log_chat, text=log_msg)
 
-        await message.answer("✅ Ваше обращение успешно зарегистрировано и отправлено.", reply_markup=get_menu_keyboard(has_applications=True))
+        await message.answer("✅ Ваше обращение успешно зарегистрировано.", reply_markup=get_menu_keyboard(has_applications=True))
     except Exception as e:
         logger.error(f"Error saving photo application: {e}")
-        await message.answer("Произошла ошибка при сохранении обращения в базе данных. Попробуйте позже.", reply_markup=ReplyKeyboardRemove())
+        await message.answer("Произошла ошибка при сохранении.", reply_markup=ReplyKeyboardRemove())
     finally:
         await state.clear()
 

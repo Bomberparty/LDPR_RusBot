@@ -3,6 +3,7 @@ from datetime import date
 
 from src.domain.entities.user import User, Role
 from src.domain.entities.application import Application
+from src.domain.entities.staff_application import StaffApplication
 
 
 class IUserService(ABC):
@@ -77,4 +78,11 @@ class IApplicationService(ABC):
 
     @abstractmethod
     async def get_applications_count(self, user_id: int) -> int: 
+        ...
+
+class IStaffApplicationService(ABC):
+    @abstractmethod
+    async def create_staff_application(
+        self, staff_id: str, data: dict, pd_file_id: str | None = None, pd_agreement: bool = False
+    ) -> StaffApplication:
         ...

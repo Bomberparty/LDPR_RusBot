@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from contextlib import _AsyncGeneratorContextManager
 
 from .entities import User, Sources, Application, Role
-
+from .entities.staff_application import StaffApplication
 
 class IUnitOfWork(ABC):
     @abstractmethod
@@ -66,4 +66,14 @@ class IApplicationRepository(ABC):
 class IGeminiExtractor(ABC):
     @abstractmethod
     async def extract_application_data(self, image_bytes: bytes) -> dict[str, str]:
+        ...
+    
+    @abstractmethod
+    async def extract_staff_application_data(self, image_bytes: bytes) -> dict:
+        ...
+
+
+class IStaffApplicationRepository(ABC):
+    @abstractmethod
+    async def create_staff_application(self, app: StaffApplication) -> StaffApplication:
         ...

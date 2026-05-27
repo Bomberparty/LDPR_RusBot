@@ -1,12 +1,12 @@
 from src.core.di import DeclarativeContainer, providers
 from src.domain.entities import Sources
-from src.domain.interfaces import IUnitOfWork, IUserRepository, IStringSorterRepository, IApplicationRepository
+from src.domain.interfaces import IUnitOfWork, IUserRepository, IStringSorterRepository, IApplicationRepository, IStaffApplicationRepository
 from src.infrastructure.repositories import ApplicationRepository
-from src.services import ApplicationService
-from src.services.interfaces import IApplicationService
+from src.services import ApplicationService, StaffApplicationService
+from src.services.interfaces import IApplicationService, IStaffApplicationService
 from src.infrastructure import Database, UnitOfWork
 from src.infrastructure.interfaces import IDatabase
-from src.infrastructure.repositories import UserRepository, LevenshteinRepository, FuzzywuzzyRepository
+from src.infrastructure.repositories import UserRepository, LevenshteinRepository, FuzzywuzzyRepository, StaffApplicationRepository
 from src.services import UserService
 from src.services.interfaces import IUserService
 from src.domain.interfaces import IGeminiExtractor
@@ -38,6 +38,12 @@ class Container(DeclarativeContainer):
     )
     app_service: providers.Factory[IApplicationService] = providers.Factory(
         ApplicationService, app_repo=application_repository, uow=uow
+    )
+    staff_application_repository: providers.Factory[IStaffApplicationRepository] = providers.Factory(
+        StaffApplicationRepository, uow=uow
+    )
+    staff_app_service: providers.Factory[IStaffApplicationService] = providers.Factory(
+        StaffApplicationService, repo=staff_application_repository, uow=uow
     )
     gemini_extractor: providers.Factory[IGeminiExtractor] = providers.Factory(
         GeminiExtractor,

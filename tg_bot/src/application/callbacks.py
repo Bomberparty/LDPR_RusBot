@@ -19,3 +19,15 @@ class FieldSelectCallback(CallbackData, prefix="field_sel"):
 
 class AdminPanelCallback(CallbackData, prefix="admin_panel"):
     action: str
+
+
+class StaffScanTypeCallback(CallbackData, prefix="staff_scan"):
+    action: str  # "my" | "other"
+
+
+class StaffFieldSelectCallback(CallbackData, prefix="staff_field_sel"):
+    field_key: str
+
+
+class StaffPdCallback(CallbackData, prefix="staff_pd"):
+    action: str  # "upload" | "skip"
