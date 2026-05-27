@@ -55,7 +55,7 @@ async def process_photo(message: types.Message, state: FSMContext, gemini_extrac
     file_info = await message.bot.get_file(photo.file_id)
     file_bytes = (await message.bot.download_file(file_info.file_path)).read()
 
-    await message.answer("🔄 Начинаю обработку фото нейросетью Gemini... Это может занять несколько секунд.")
+    await message.answer("🔄 Начинаю обработку фото... Это может занять несколько секунд.")
     try:
         extracted = await gemini_extractor.extract_application_data(file_bytes)
     except Exception as e:
