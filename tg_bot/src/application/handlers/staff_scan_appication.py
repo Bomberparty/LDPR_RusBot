@@ -10,13 +10,12 @@ from src.application.keyboards.staff_scan_keyboard import (
     get_scan_type_keyboard, 
     get_staff_edit_menu_keyboard,
     get_staff_field_suggestions_keyboard, 
-    get_pd_upload_keyboard
+    get_pd_upload_keyboard,
+    get_finalize_staff_keyboard
 )
 from src.application.keyboards.menu_keyboard import get_menu_keyboard
-from src.services.interfaces import IStaffApplicationService, IUserService
-from src.domain.interfaces import IGeminiExtractor, IStringSorterRepository, IUserRepository
-from src.domain.entities import Sources
-from src.domain.exceptions import UserNotFoundError
+from src.services.interfaces import IStaffApplicationService
+from src.domain.interfaces import IGeminiExtractor, IStringSorterRepository
 
 router = Router(name=__name__)
 logger = logging.getLogger(__name__)
@@ -67,13 +66,13 @@ async def process_staff_photo(message: types.Message, state: FSMContext, gemini_
     text = "📄 *Распознанные данные:*\n\n"
     for k, v in STAFF_FIELD_MAP.items():
         text += f"{k}: {extracted.get(v, '-')}\n"
-    text += "\nВыберите действие:"
+    text += "\nВыберите действие: "
     await message.answer(text, parse_mode="Markdown", reply_markup=get_staff_edit_menu_keyboard())
 
 @router.message(F.text == "✏️ Отредактировать данные", StaffApplicationStates.editing_other)
 async def start_staff_edit(message: types.Message, state: FSMContext):
-    await state.set_state(StaffApplicationStates.typing_field_other)
-    await message.reply("Введите название поля для редактирования:", reply_markup=ReplyKeyboardRemove())
+    await state.set_state(StaffApplicationStates.typing_field_other) 
+    await message.reply("Введите название поля для редактирования: ", reply_markup=ReplyKeyboardRemove())
 
 @router.message(StaffApplicationStates.typing_field_other)
 async def search_staff_field(message: types.Message, state: FSMContext, string_sorter: IStringSorterRepository):
@@ -92,7 +91,7 @@ async def search_staff_field(message: types.Message, state: FSMContext, string_s
     field_options = {STAFF_FIELD_MAP[name]: name for name in suggestions}
     await state.update_data(field_options=field_options)
     await state.set_state(StaffApplicationStates.selecting_field_other)
-    await message.reply("Выберите поле:", reply_markup=get_staff_field_suggestions_keyboard(field_options))
+    await message.reply("Выберите поле: ", reply_markup=get_staff_field_suggestions_keyboard(field_options))
 
 @router.callback_query(StaffFieldSelectCallback.filter(), StaffApplicationStates.selecting_field_other)
 async def select_staff_field(query: types.CallbackQuery, callback_data: StaffFieldSelectCallback, state: FSMContext):
@@ -101,7 +100,7 @@ async def select_staff_field(query: types.CallbackQuery, callback_data: StaffFie
     await state.update_data(editing_field_key=field_key, editing_field_name=field_name)
     await state.set_state(StaffApplicationStates.entering_value_other)
     await query.message.edit_reply_markup(reply_markup=None)
-    await query.message.reply(f"✏️ Введите новое значение для *{field_name}*:", parse_mode="Markdown")
+    await query.message.reply(f"✏️ Введите новое значение для *{field_name}*: ", parse_mode="Markdown")
 
 @router.message(StaffApplicationStates.entering_value_other)
 async def enter_staff_value(message: types.Message, state: FSMContext):
@@ -118,54 +117,64 @@ async def enter_staff_value(message: types.Message, state: FSMContext):
     text = "📄 *Обновлённые данные:*\n\n"
     for k, v in STAFF_FIELD_MAP.items():
         text += f"{k}: {app_data.get(v, '-')}\n"
-    await message.answer(text + "\nВыберите действие:", parse_mode="Markdown", reply_markup=get_staff_edit_menu_keyboard())
+    await message.answer(text + "\nВыберите действие: ", parse_mode="Markdown", reply_markup=get_staff_edit_menu_keyboard())
 
 @router.message(F.text == "✅ Сохранить и перейти к ПДн", StaffApplicationStates.editing_other)
 async def go_to_pd(message: types.Message, state: FSMContext):
     await state.set_state(StaffApplicationStates.pd_upload)
-    await message.reply("Загрузите файл с согласием на обработку ПДн или откажитесь:", reply_markup=get_pd_upload_keyboard())
+    await message.reply("Загрузите файл с согласием на обработку ПДн или откажитесь: ", reply_markup=get_pd_upload_keyboard())
 
+# ✅ Ветка 1: Отказ от загрузки ПДн -> Сохраняем флаги в FSM -> Переходим в финальное состояние
 @router.callback_query(StaffPdCallback.filter(), StaffApplicationStates.pd_upload)
 async def choose_pd(query: types.CallbackQuery, callback_data: StaffPdCallback, state: FSMContext):
     await query.message.edit_reply_markup(reply_markup=None)
     if callback_data.action == "skip":
-        return await save_staff_application(query.message, state, pd_agreement=False, pd_file_id="-")
+        await state.update_data(pd_agreement=False, pd_file_id="-")
+        await state.set_state(StaffApplicationStates.confirm_save)
+        return await query.message.answer(
+            "📝 Данные собраны. Нажмите кнопку ниже для сохранения и отправки обращения.",
+            reply_markup=get_finalize_staff_keyboard()
+        )
     await state.set_state(StaffApplicationStates.waiting_pd_file)
-    await query.message.reply("📤 Отправьте документ/фото согласия ПДн (PDF или изображение):")
+    await query.message.reply("📤 Отправьте документ/фото согласия ПДн (PDF или изображение): ")
 
+# ✅ Ветка 2: Загрузка файла ПДн -> Сохраняем флаги в FSM -> Переходим в финальное состояние
 @router.message(StaffApplicationStates.waiting_pd_file, F.document | F.photo)
 async def receive_pd_file(message: types.Message, state: FSMContext):
     file = message.document or message.photo[-1]
-    file_info = await message.bot.get_file(file.file_id)
-    await save_staff_application(message, state, pd_agreement=True, pd_file_id=file.file_id)
+    await state.update_data(pd_agreement=True, pd_file_id=file.file_id)
+    await state.set_state(StaffApplicationStates.confirm_save)
+    await message.answer(
+        "📄 Файл согласия ПДн получен. Нажмите кнопку ниже для сохранения и отправки обращения.",
+        reply_markup=get_finalize_staff_keyboard()
+    )
 
 @router.message(StaffApplicationStates.waiting_pd_file)
 async def wrong_pd_type(message: types.Message):
     await message.reply("⚠️ Отправьте файл или изображение.")
 
-async def save_staff_application(
-    message: types.Message, 
-    state: FSMContext, 
-    pd_agreement: bool, 
-    pd_file_id: str,
-    staff_app_service: IStaffApplicationService,  
-    log_chat: str                                 
-    ):
+@router.callback_query(F.data == "staff_finalize", StaffApplicationStates.confirm_save)
+async def finalize_staff_application(
+    query: types.CallbackQuery,
+    state: FSMContext,
+    staff_app_service: IStaffApplicationService,
+    log_chat: str
+):
+    await query.message.edit_reply_markup(reply_markup=None)
     data = await state.get_data()
     app_data = data.get("staff_app_data", {})
+    pd_agreement = data.get("pd_agreement", False)
+    pd_file_id = data.get("pd_file_id", "-")
+
     try:
-        # app_service: IStaffApplicationService = message.bot.__dict__.get("staff_app_service") # DI fallback or pass explicitly
-        # В реальном DI это инжектится, но для примера берём из data/контекста или передаём через handler args.
-        # Ниже используем стандартный паттерн aiogram DI через middleware (уже настроен)
-        # Предполагаем, что DI предоставит staff_app_service, user_repo, log_chat
-        staff_id = str(message.from_user.id)
-        # app = await message.bot.__dict__["staff_app_service"].create_staff_application(
-            # staff_id, app_data, pd_file_id, pd_agreement
-        # )
+        staff_id = str(query.from_user.id)
         
-        # log_chat = message.bot.__dict__["log_chat"]
+        app = await staff_app_service.create_staff_application(
+            staff_id, app_data, pd_file_id, pd_agreement
+        )
+        
         log_msg = (
-            f"📩 Новое обращение (ЧУЖОЕ) от сотрудника {message.from_user.username or message.from_user.id}\n"
+            f"📩 Новое обращение (ЧУЖОЕ) от сотрудника {query.from_user.username or query.from_user.id}\n"
             f"ФИО: {app.surname} {app.name} {app.patronymic or 'Не указано'}\n"
             f"Регион: {app.region} | Город: {app.city}\n"
             f"Домашний адрес: {app.home_address or 'Не указан'}\n"
@@ -176,10 +185,11 @@ async def save_staff_application(
             f"Согласие на ПДн: {'+' if pd_agreement else '-'}\n"
             f"ID обращения: {app.id}"
         )
-        await message.bot.send_message(chat_id=log_chat, text=log_msg)
-        await message.answer("✅ Обращение успешно зарегистрировано.", reply_markup=get_menu_keyboard())
+        
+        await query.message.bot.send_message(chat_id=log_chat, text=log_msg)
+        await query.message.answer("✅ Обращение успешно зарегистрировано.", reply_markup=get_menu_keyboard())
     except Exception as e:
         logger.error(f"Error saving staff application: {e}")
-        await message.answer("❌ Ошибка сохранения. Попробуйте позже.", reply_markup=ReplyKeyboardRemove())
+        await query.message.answer("❌ Ошибка сохранения. Попробуйте позже.", reply_markup=ReplyKeyboardRemove())
     finally:
         await state.clear()
